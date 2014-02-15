@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<head>
+  <title>Pusher Test</title>
+  <script src="http://js.pusher.com/2.1/pusher.min.js" type="text/javascript"></script>
+  <script src="./js/jquery-1.11.0.min.js" type="text/javascript"></script>
+  <script src="http://jquery-json.googlecode.com/files/jquery.json-2.2.min.js" type="text/javascript"></script>
+  <script src="./js/md5.js" type="text/javascript"></script>
+  <script src="./js/jssha256.js" type="text/javascript"></script>
+
+  <script type="text/javascript">
+    // Enable pusher logging - don't include this in production
+    Pusher.log = function(message) {
+      if (window.console && window.console.log) {
+        window.console.log(message);
+      }
+    };
+
+    var pusher = new Pusher('2f5870e9f2775f62cc25');
+    var channel = pusher.subscribe('test_channel');
+    channel.bind('my_event', function(data) {
+      alert(data.message);
+    });
+
+    function sendSomething(){
+      // prepare message
+      var msg             = $('#test-form [ name=message]').val();
+      var senddata        = {};
+      senddata["message"] = msg;
+
+      // prepare and send post request
+      var body            = $.toJSON(senddata);
+      var body_md5        = CybozuLabs.MD5.calc(body);
+      var auth_timestamp  = ~~(new Date/1000);
+      var auth_key        = '2f5870e9f2775f62cc25';
+      var svr             = 'http://api.pusherapp.com';
+      var path            = '/apps/66129/channels/test_channel/events';
+      var event_name      = 'my_event'; //今回はイベント名そのまま
+      var string_to_sign  = "POST\n" + path + "\nauth_key=" + auth_key + "&auth_timestamp=" + auth_timestamp + "&auth_version=1.0&body_md5=" + body_md5 + "&name=" + event_name;
+      var auth_signature  = '';
+      var uri             = '';
+      var secret_key      = '8e46bc46b2212f33cab5';
+      auth_signature = HMAC_SHA256_MAC(secret_key, string_to_sign);
+      uri =
+         svr + path + "?" +
+        "auth_key=" + auth_key + "&" +
+        "body_md5=" + body_md5 + "&" +
+        "auth_timestamp=" + auth_timestamp + "&" +
+        "auth_signature=" + auth_signature + "&" +
+        "name=" + event_name + "&" +
+        "auth_version=1.0"
+      ;
+      $.post(uri, body, function(data, status) {/* 送出後何かするならここに */});
+    }
+  </script>
+</head>
+<body>
+  <form id="test-form">
+    <input type="button" onclick="javascript:sendSomething();" value="submit" />
+    <input type="text" name="message" value="Hello World" />
+  </form>
+</body>
